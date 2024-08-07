@@ -199,3 +199,16 @@ macro_rules! impl_from_infallible {
         }
     }
 }
+
+/// Implements `to_hex` for functions that have implemented [`core::fmt::LowerHex`]
+#[macro_export]
+macro_rules! impl_to_hex {
+    ($t:ident) => {
+        impl $t {
+            /// Gets the hex representation of this type
+            pub fn to_hex(&self) -> String {
+                format!("{self:x}")
+            }
+        }
+    };
+}
