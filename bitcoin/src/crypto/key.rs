@@ -12,11 +12,11 @@ use core::str::FromStr;
 use hashes::hash160;
 use hex::{FromHex, HexToArrayError};
 use internals::array_vec::ArrayVec;
-use internals::write_err;
+use internals::{impl_to_hex, write_err};
 use io::{Read, Write};
 
 use crate::crypto::ecdsa;
-use crate::internal_macros::impl_asref_push_bytes;
+use crate::internal_macros::{impl_asref_push_bytes};
 use crate::network::NetworkKind;
 use crate::prelude::{DisplayHex, String, Vec};
 use crate::script::{self, ScriptBuf};
@@ -700,6 +700,7 @@ pub struct TweakedPublicKey(XOnlyPublicKey);
 impl fmt::LowerHex for TweakedPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(&self.0, f) }
 }
+impl_to_hex!(TweakedPublicKey);
 
 impl fmt::Display for TweakedPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Display::fmt(&self.0, f) }

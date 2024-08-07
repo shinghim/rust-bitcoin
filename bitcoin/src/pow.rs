@@ -7,7 +7,7 @@
 
 use core::ops::{Add, Div, Mul, Not, Rem, Shl, Shr, Sub};
 use core::{cmp, fmt};
-
+use internals::impl_to_hex;
 use io::{BufRead, Write};
 #[cfg(all(test, mutate))]
 use mutagen::mutate;
@@ -103,6 +103,7 @@ impl Work {
     pub fn log2(self) -> f64 { self.0.to_f64().log2() }
 }
 do_impl!(Work);
+impl_to_hex!(Work);
 
 impl Add for Work {
     type Output = Work;
@@ -328,6 +329,7 @@ impl Target {
     pub fn max_transition_threshold_unchecked(&self) -> Self { Self(self.0 << 2) }
 }
 do_impl!(Target);
+impl_to_hex!(Target);
 
 /// Encoding of 256-bit target as 32-bit float.
 ///
@@ -465,6 +467,7 @@ impl fmt::LowerHex for CompactTarget {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(&self.0, f) }
 }
+impl_to_hex!(CompactTarget);
 
 impl fmt::UpperHex for CompactTarget {
     #[inline]

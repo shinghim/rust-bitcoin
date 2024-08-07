@@ -24,7 +24,7 @@ use core::str::FromStr;
 use core::{fmt, ops};
 
 use hex::FromHex;
-use internals::{debug_from_display, write_err};
+use internals::{debug_from_display, impl_to_hex, write_err};
 use io::{BufRead, Write};
 
 use crate::consensus::encode::{self, Decodable, Encodable};
@@ -123,6 +123,7 @@ impl ServiceFlags {
 impl fmt::LowerHex for ServiceFlags {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(&self.0, f) }
 }
+impl_to_hex!(ServiceFlags);
 
 impl fmt::UpperHex for ServiceFlags {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::UpperHex::fmt(&self.0, f) }
@@ -290,6 +291,7 @@ impl fmt::LowerHex for Magic {
         Ok(())
     }
 }
+impl_to_hex!(Magic);
 
 impl fmt::UpperHex for Magic {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {

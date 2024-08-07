@@ -19,6 +19,7 @@ use core::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use internals::impl_to_hex;
 #[cfg(feature = "alloc")]
 use units::locktime::relative::TimeOverflowError;
 #[cfg(feature = "alloc")]
@@ -220,6 +221,7 @@ impl fmt::Display for Sequence {
 impl fmt::LowerHex for Sequence {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(&self.0, f) }
 }
+impl_to_hex!(Sequence);
 
 impl fmt::UpperHex for Sequence {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::UpperHex::fmt(&self.0, f) }
