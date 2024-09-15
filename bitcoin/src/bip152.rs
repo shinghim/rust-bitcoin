@@ -22,10 +22,22 @@ use crate::{block, Block, BlockHash, Transaction};
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Error {
-    /// An unknown version number was used.
-    UnknownVersion,
     /// The prefill slice provided was invalid.
     InvalidPrefill,
+}
+
+/// Version enum for the compact blocks version.
+///
+/// See [BIP 152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki#protocol-versioning)
+/// for more information
+pub enum CompactBlocksVersion {
+    /// See [BIP 152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki#specification-for-version-1)
+    /// for more information
+    ONE,
+
+    /// See [BIP 152](https://github.com/bitcoin/bips/blob/master/bip-0152.mediawiki#specification-for-version-2)
+    /// for more information
+    TWO
 }
 
 internals::impl_from_infallible!(Error);
@@ -33,7 +45,6 @@ internals::impl_from_infallible!(Error);
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::UnknownVersion => write!(f, "an unknown version number was used"),
             Error::InvalidPrefill => write!(f, "the prefill slice provided was invalid"),
         }
     }
@@ -45,7 +56,7 @@ impl std::error::Error for Error {
         use self::Error::*;
 
         match *self {
-            UnknownVersion | InvalidPrefill => None,
+            InvalidPrefill => None,
         }
     }
 }
@@ -191,8 +202,6 @@ impl Encodable for HeaderAndShortIds {
 impl HeaderAndShortIds {
     /// Creates a new [`HeaderAndShortIds`] from a full block.
     ///
-    /// The version number must be either 1 or 2.
-    ///
     /// The `prefill` slice indicates which transactions should be prefilled in
     /// the block. It should contain the indexes in the block of the txs to
     /// prefill. It must be ordered. 0 should not be included as the
@@ -202,12 +211,9 @@ impl HeaderAndShortIds {
     pub fn from_block(
         block: &Block,
         nonce: u64,
-        version: u32,
+        version: CompactBlocksVersion,
         mut prefill: &[usize],
     ) -> Result<HeaderAndShortIds, Error> {
-        if version != 1 && version != 2 {
-            return Err(Error::UnknownVersion);
-        }
 
         let siphash_keys = ShortId::calculate_siphash_keys(&block.header, nonce);
 
@@ -215,22 +221,22 @@ impl HeaderAndShortIds {
         let mut short_ids = Vec::with_capacity(block.txdata.len() - prefill.len());
         let mut last_prefill = 0;
         for (idx, tx) in block.txdata.iter().enumerate() {
-            // Check if we should prefill this tx.
-            let prefill_tx = if prefill.first() == Some(&idx) {
+            // Only prefill specified indices and the coinbase
+            let should_prefill_tx = if prefill.first() == Some(&idx) {
                 prefill = &prefill[1..];
                 true
             } else {
                 idx == 0 // Always prefill coinbase.
             };
 
-            if prefill_tx {
+            if should_prefill_tx {
                 let diff_idx = idx - last_prefill;
                 last_prefill = idx + 1;
                 prefilled.push(PrefilledTransaction {
                     idx: diff_idx as u16,
                     tx: match version {
                         // >  As encoded in "tx" messages sent in response to getdata MSG_TX
-                        1 => {
+                        CompactBlocksVersion::ONE => {
                             // strip witness for version 1
                             let mut no_witness = tx.clone();
                             no_witness.input.iter_mut().for_each(|i| i.witness.clear());
@@ -240,17 +246,15 @@ impl HeaderAndShortIds {
                         // > announcement and those in response to getdata) and in blocktxn should
                         // > include witness data, using the same format as responses to getdata
                         // > MSG_WITNESS_TX, specified in BIP144.
-                        2 => tx.clone(),
-                        _ => unreachable!(),
+                        CompactBlocksVersion::TWO => tx.clone()
                     },
                 });
             } else {
                 match version {
-                    1 =>
+                    CompactBlocksVersion::ONE =>
                         short_ids.push(ShortId::with_siphash_keys(&tx.compute_txid(), siphash_keys)),
-                    2 => short_ids
-                        .push(ShortId::with_siphash_keys(&tx.compute_wtxid(), siphash_keys)),
-                    _ => unreachable!(),
+                    CompactBlocksVersion::TWO => short_ids
+                        .push(ShortId::with_siphash_keys(&tx.compute_wtxid(), siphash_keys))
                 }
             }
         }
@@ -262,7 +266,6 @@ impl HeaderAndShortIds {
         Ok(HeaderAndShortIds {
             header: block.header,
             nonce,
-            // Provide coinbase prefilled.
             prefilled_txs: prefilled,
             short_ids,
         })
@@ -418,7 +421,7 @@ mod test {
                 previous_output: OutPoint::new(dummy_txid, 0),
                 script_sig: ScriptBuf::new(),
                 sequence: Sequence(1),
-                witness: Witness::new(),
+                witness: Witness::from_slice(&[vec![0u8, 123, 75], vec![2u8, 6, 3, 7, 8]]), // Arbitrary value
             }],
             output: vec![TxOut { value: Amount::ONE_SAT, script_pubkey: ScriptBuf::new() }],
         }
@@ -438,22 +441,41 @@ mod test {
         }
     }
 
+
     #[test]
-    fn test_header_and_short_ids_from_block() {
+    fn test_header_and_short_ids_from_block_version_1() {
         let block = dummy_block();
 
-        let compact = HeaderAndShortIds::from_block(&block, 42, 2, &[]).unwrap();
+        let compact = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::ONE, &[1, 2]).unwrap();
+        assert_eq!(compact.nonce, 42);
+        assert_eq!(compact.short_ids.len(), 0);
+        assert_eq!(compact.prefilled_txs.len(), 3);
+        assert_eq!(compact.prefilled_txs[0].idx, 0);
+
+        for prefilled_tx in compact.prefilled_txs.iter() {
+            prefilled_tx.tx.input.iter().for_each(|tx_in| assert!(tx_in.witness.is_empty()));
+            assert_eq!(prefilled_tx.idx, 0);
+        }
+    }
+    #[test]
+    fn test_header_and_short_ids_from_block_version_2() {
+        let block = dummy_block();
+
+        let compact = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::TWO, &[]).unwrap();
         assert_eq!(compact.nonce, 42);
         assert_eq!(compact.short_ids.len(), 2);
         assert_eq!(compact.prefilled_txs.len(), 1);
         assert_eq!(compact.prefilled_txs[0].idx, 0);
-        assert_eq!(&compact.prefilled_txs[0].tx, &block.txdata[0]);
+        assert_eq!(compact.prefilled_txs[0].tx, block.txdata[0]);
 
-        let compact = HeaderAndShortIds::from_block(&block, 42, 2, &[0, 1, 2]).unwrap();
+        let compact = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::TWO, &[0, 1, 2]).unwrap();
         let idxs = compact.prefilled_txs.iter().map(|t| t.idx).collect::<Vec<_>>();
-        assert_eq!(idxs, [0, 0, 0]);
+        for (i, prefilled_tx) in compact.prefilled_txs.iter().enumerate() {
+            assert_eq!(prefilled_tx.tx, block.txdata[i]);
+            assert_eq!(prefilled_tx.idx, 0);
+        }
 
-        let compact = HeaderAndShortIds::from_block(&block, 42, 2, &[2]).unwrap();
+        let compact = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::TWO, &[2]).unwrap();
         let idxs = compact.prefilled_txs.iter().map(|t| t.idx).collect::<Vec<_>>();
         assert_eq!(idxs, [0, 1]);
     }
@@ -466,7 +488,7 @@ mod test {
 
         let block: Block = deserialize(&raw_block).unwrap();
         let nonce = 18053200567810711460;
-        let compact = HeaderAndShortIds::from_block(&block, nonce, 2, &[]).unwrap();
+        let compact = HeaderAndShortIds::from_block(&block, nonce, CompactBlocksVersion::TWO, &[]).unwrap();
         let compact_expected = deserialize(&raw_compact).unwrap();
 
         assert_eq!(compact, compact_expected);
@@ -524,4 +546,23 @@ mod test {
             indexes: vec![u64::MAX],
         });
     }
+
+    #[test]
+    fn test_invalid_prefill_with_index_greater_than_txs_in_block() {
+        let block = dummy_block();
+        let invalid_prefill_index = block.txdata.len() + 1;
+        let result = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::TWO, &[invalid_prefill_index]);
+
+        assert_eq!(result, Err(Error::InvalidPrefill));
+    }
+
+    #[test]
+    fn test_invalid_prefill_with_unordered_indices() {
+        let block = dummy_block();
+        let unordered_prefill = [0, 2, 1];
+        let result = HeaderAndShortIds::from_block(&block, 42, CompactBlocksVersion::TWO, &unordered_prefill);
+
+        assert_eq!(result, Err(Error::InvalidPrefill));
+    }
+
 }
