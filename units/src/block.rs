@@ -276,25 +276,52 @@ impl<'a> Arbitrary<'a> for BlockInterval {
 
 #[cfg(test)]
 mod tests {
+    use crate::locktime::relative::Height;
     use super::*;
+
+    // Sanity test
+    #[test]
+    fn test_from() {
+        let height: u32 = BlockHeight(100).into();
+        assert_eq!(height, 100);
+
+        let interval: u32 = BlockInterval(100).into();
+        assert_eq!(interval, 100);
+
+        let interval_from_height: BlockInterval = Height::from(10u16).into();
+        assert_eq!(interval_from_height.to_u32(), 10u32)
+    }
+
+    #[test]
+    fn test_try_from() {
+        let invalid_height_greater = relative::Height::try_from(BlockInterval(u32::from(u16::MAX) + 1));
+        assert!(invalid_height_greater.is_err());
+
+        let valid_height = relative::Height::try_from(BlockInterval(u32::from(u16::MAX)));
+        assert!(valid_height.is_ok())
+    }
 
     // These tests are supposed to comprise an exhaustive list of available operations.
     #[test]
     fn all_available_ops() {
         // height - height = interval
-        assert!(BlockHeight(100) - BlockHeight(99) == BlockInterval(1));
+        assert_eq!(BlockHeight(10) - BlockHeight(7), BlockInterval(3));
 
         // height + interval = height
-        assert!(BlockHeight(100) + BlockInterval(1) == BlockHeight(101));
+        assert_eq!(BlockHeight(100) + BlockInterval(1), BlockHeight(101));
 
         // height - interval == height
-        assert!(BlockHeight(100) - BlockInterval(1) == BlockHeight(99));
+        assert_eq!(BlockHeight(100) - BlockInterval(1), BlockHeight(99));
 
         // interval + interval = interval
-        assert!(BlockInterval(1) + BlockInterval(2) == BlockInterval(3));
+        assert_eq!(BlockInterval(1) + BlockInterval(2), BlockInterval(3));
 
         // interval - interval = interval
-        assert!(BlockInterval(3) - BlockInterval(2) == BlockInterval(1));
+        assert_eq!(BlockInterval(10) - BlockInterval(7), BlockInterval(3));
+
+        assert_eq!([BlockInterval(1), BlockInterval(2), BlockInterval(3)].iter().sum::<BlockInterval>(), BlockInterval(6));
+
+        assert_eq!([BlockInterval(4), BlockInterval(5), BlockInterval(6)].into_iter().sum::<BlockInterval>(), BlockInterval(15));
 
         // interval += interval
         let mut int = BlockInterval(1);
@@ -302,8 +329,8 @@ mod tests {
         assert_eq!(int, BlockInterval(3));
 
         // interval -= interval
-        let mut int = BlockInterval(3);
-        int -= BlockInterval(2);
-        assert_eq!(int, BlockInterval(1));
+        let mut int = BlockInterval(10);
+        int -= BlockInterval(7);
+        assert_eq!(int, BlockInterval(3));
     }
 }
