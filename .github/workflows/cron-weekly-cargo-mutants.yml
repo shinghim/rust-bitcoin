@@ -29,7 +29,7 @@ jobs:
             
           $(head -n 10 mutants.out/missed.txt)
           
-          For the complete list, please check the mutants.out artifact.
+          For the complete list, please check the [mutants.out artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           EOF
           )"
             echo "create_issue=true" >> $GITHUB_ENV

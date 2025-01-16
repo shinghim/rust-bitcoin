@@ -1,8 +1,8 @@
 additional_cargo_args = ["--all-features"]
 examine_globs = ["units/src/**/*.rs"]
-exclude_globs = [
-    "units/src/amount/verification.rs" # kani tests
-]
+#exclude_globs = [
+#    "units/src/amount/verification.rs" # kani tests
+#]
 exclude_re = [
     "impl Debug",
     "impl Arbitrary",
