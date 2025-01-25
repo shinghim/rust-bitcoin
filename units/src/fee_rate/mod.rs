@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
 
-//! Implements `FeeRate` and assoctiated features.
+//! Implements `FeeRate` and associated features.
 
 #[cfg(feature = "serde")]
 pub mod serde;
@@ -169,7 +169,6 @@ impl<'a> core::iter::Sum<&'a FeeRate> for FeeRate {
     }
 }
 
-crate::impl_parse_str_from_int_infallible!(FeeRate, u64, from_sat_per_kwu);
 
 #[cfg(feature = "arbitrary")]
 impl<'a> Arbitrary<'a> for FeeRate {
