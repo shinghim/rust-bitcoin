@@ -97,8 +97,36 @@ macro_rules! impl_sub_assign {
 }
 pub(crate) use impl_sub_assign;
 
-/// Implement `ops::MulAssign` for `$ty` multiplied by `$rhs` and `&$rhs`.
+/// Implement `ops::MulAssign` for `$ty` and `&$ty`.
 macro_rules! impl_mul_assign {
+    ($ty:ty) => {
+        impl core::ops::MulAssign<$ty> for $ty {
+            fn mul_assign(&mut self, rhs: $ty) { *self = *self * rhs }
+        }
+
+        impl core::ops::MulAssign<&$ty> for $ty {
+            fn mul_assign(&mut self, rhs: &$ty) { *self = *self * *rhs }
+        }
+    };
+}
+pub(crate) use impl_mul_assign;
+
+/// Implement `ops::DivAssign` for `$ty` and `&$ty`.
+macro_rules! impl_div_assign {
+    ($ty:ty) => {
+        impl core::ops::DivAssign<$ty> for $ty {
+            fn div_assign(&mut self, rhs: $ty) { *self = *self / rhs }
+        }
+
+        impl core::ops::DivAssign<&$ty> for $ty {
+            fn div_assign(&mut self, rhs: &$ty) { *self = *self / *rhs }
+        }
+    };
+}
+pub(crate) use impl_div_assign;
+
+/// Implement `ops::MulAssign` for `$ty` multiplied by `$rhs` and `&$rhs`.
+macro_rules! impl_mul_assign_with_rhs {
     ($ty:ty, $rhs:ident) => {
         impl core::ops::MulAssign<$rhs> for $ty {
             fn mul_assign(&mut self, rhs: $rhs) { *self = *self * rhs }
@@ -109,10 +137,10 @@ macro_rules! impl_mul_assign {
         }
     };
 }
-pub(crate) use impl_mul_assign;
+pub(crate) use impl_mul_assign_with_rhs;
 
 /// Implement `ops::DivAssign` for `$ty` divided by `$rhs` and `&$rhs`.
-macro_rules! impl_div_assign {
+macro_rules! impl_div_assign_with_rhs {
     ($ty:ty, $rhs:ident) => {
         impl core::ops::DivAssign<$rhs> for $ty {
             fn div_assign(&mut self, rhs: $rhs) { *self = *self / rhs }
@@ -123,4 +151,4 @@ macro_rules! impl_div_assign {
         }
     };
 }
-pub(crate) use impl_div_assign;
+pub(crate) use impl_div_assign_with_rhs;
