@@ -30,7 +30,7 @@ extern crate alloc;
 use core::str::FromStr;
 use core::{fmt, ops};
 use std::borrow::{Borrow, BorrowMut, ToOwned};
-
+use arbitrary::{Arbitrary, Unstructured};
 use bitcoin::consensus::encode::{self, Decodable, Encodable};
 use bitcoin::network::{Network, Params, TestnetVersion};
 use hex::FromHex;
@@ -406,6 +406,20 @@ impl fmt::Display for UnknownNetworkError {
 
 impl std::error::Error for UnknownNetworkError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for ServiceFlags {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(ServiceFlags(u.arbitrary()?))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for Magic {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Magic(u.arbitrary()?))
+    }
 }
 
 #[cfg(test)]
