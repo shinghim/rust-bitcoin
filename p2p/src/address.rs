@@ -7,6 +7,8 @@
 
 use core::{fmt, iter};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
 
 use bitcoin::consensus::encode::{self, Decodable, Encodable, ReadExt, WriteExt};
 use io::{BufRead, Read, Write};
@@ -433,6 +435,20 @@ impl fmt::Display for AddrV2ToIpv6AddrError {
 }
 
 impl std::error::Error for AddrV2ToIpv6AddrError {}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for AddrV2 {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        match u.int_in_range(0..=5)? {
+            0 => Ok(AddrV2::Ipv4(Ipv4Addr::from_bits(u32::arbitrary(u)?))),
+            1 => Ok(AddrV2::Ipv6(Ipv6Addr::from_bits(u128::arbitrary(u)?))),
+            2 => Ok(AddrV2::TorV3(u.arbitrary::<[u8; 32]>()?)),
+            3 => Ok(AddrV2::I2p(u.arbitrary::<[u8; 32]>()?)),
+            4 => Ok(AddrV2::Cjdns(Ipv6Addr::from_bits(u128::arbitrary(u)?))),
+            _ => Ok(AddrV2::Unknown(u8::arbitrary(u)?, Vec::<u8>::arbitrary(u)?))
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
