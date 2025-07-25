@@ -7,6 +7,8 @@
 pub mod merkle_branch;
 pub mod serialized_signature;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
 use core::cmp::{Ordering, Reverse};
 use core::convert::Infallible;
 use core::fmt;
@@ -37,7 +39,8 @@ pub use crate::crypto::taproot::{SigFromSliceError, Signature};
 pub use merkle_branch::TaprootMerkleBranch;
 #[doc(inline)]
 pub use merkle_branch::TaprootMerkleBranchBuf;
-
+#[cfg(feature = "arbitrary")]
+use crate::psbt::serialize::Deserialize;
 #[doc(inline)]
 pub use crate::XOnlyPublicKey;
 
@@ -1686,6 +1689,79 @@ impl fmt::Display for InvalidControlBlockSizeError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for InvalidControlBlockSizeError {}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for TapLeafHash {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(TapLeafHash::from_byte_array(u.arbitrary()?))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for TapNodeHash {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(TapNodeHash::from_byte_array(u.arbitrary()?))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for FutureLeafVersion {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        FutureLeafVersion::from_consensus(u.arbitrary()?).map_err(|_| arbitrary::Error::IncorrectFormat)
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for LeafVersion {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        match bool::arbitrary(u)? {
+            true => Ok(LeafVersion::TapScript),
+            false => Ok(LeafVersion::Future(u.arbitrary()?))
+        }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for LeafNode {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(LeafNode{ leaf: u.arbitrary()?, merkle_branch: u.arbitrary()? })
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for NodeInfo {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(NodeInfo {
+            hash: u.arbitrary()?,
+            leaves: u.arbitrary()?,
+            has_hidden_nodes: false,
+        })
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for TapLeaf {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        match bool::arbitrary(u)? {
+            true => Ok(TapLeaf::Hidden(u.arbitrary()?)),
+            false => Ok(TapLeaf::Script(u.arbitrary()?, u.arbitrary()?))
+        }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for TapTree {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(TapTree::deserialize(u.arbitrary()?).map_err(|_| arbitrary::Error::IncorrectFormat)?)
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for ControlBlock {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(ControlBlock::decode(u.arbitrary()?).map_err(|_| arbitrary::Error::IncorrectFormat)?)
+    }
+}
 
 #[cfg(test)]
 mod test {

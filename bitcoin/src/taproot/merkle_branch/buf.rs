@@ -2,6 +2,9 @@
 
 //! Contains `TaprootMerkleBranchBuf` and its associated types.
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
+
 use hashes::Hash;
 
 use super::{
@@ -266,3 +269,10 @@ impl DoubleEndedIterator for IntoIter {
 impl ExactSizeIterator for IntoIter {}
 
 impl core::iter::FusedIterator for IntoIter {}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for TaprootMerkleBranchBuf {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(TaprootMerkleBranchBuf::decode(u.arbitrary()?).map_err(|_| arbitrary::Error::IncorrectFormat)?)
+    }
+}
