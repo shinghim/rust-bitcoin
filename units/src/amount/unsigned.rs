@@ -9,6 +9,7 @@ use core::{default, fmt};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::{Arbitrary, Unstructured};
+use internals::const_casts;
 use NumOpResult as R;
 
 use super::error::{ParseAmountErrorInner, ParseErrorInner};
@@ -17,7 +18,6 @@ use super::{
     OutOfRangeError, ParseAmountError, ParseError, SignedAmount,
 };
 use crate::{FeeRate, MathOp, NumOpError as E, NumOpResult, Weight};
-use internals::const_casts;
 
 mod encapsulate {
     use super::OutOfRangeError;
