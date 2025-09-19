@@ -10,6 +10,8 @@ mod crypto;
 #[cfg(bench)]
 mod tests;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
 use core::cmp;
 
 use crate::{incomplete_block_len, HashEngine as _};
@@ -100,4 +102,11 @@ impl crate::HashEngine for HashEngine {
     fn n_bytes_hashed(&self) -> u64 { self.bytes_hashed }
     crate::internal_macros::engine_input_impl!();
     fn finalize(self) -> Self::Hash { Hash::from_engine(self) }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for Hash {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Hash(u.arbitrary()?))
+    }
 }
