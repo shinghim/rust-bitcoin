@@ -14,6 +14,7 @@ rust-version = "1.74.0"
 exclude = ["tests", "contrib"]
 
 [features]
+arbitrary = ["dep:arbitrary"]
 default = ["std"]
 std = ["alloc", "hex?/std"]
 alloc = ["hex?/alloc"]
@@ -24,6 +25,7 @@ small-hash = []
 [dependencies]
 internals = { package = "bitcoin-internals", path = "../internals" }
 
+arbitrary = { version = "1.4.1", optional = true}
 hex = { package = "hex-conservative", version = "0.3.0", default-features = false, optional = true }
 serde = { version = "1.0.195", default-features = false, optional = true }
 

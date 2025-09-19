@@ -8,6 +8,8 @@ mod crypto;
 #[cfg(bench)]
 mod tests;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
 use core::{cmp, convert, fmt};
 
 use internals::slice::SliceExt;
@@ -256,3 +258,10 @@ impl fmt::Display for MidstateError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for MidstateError {}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for Hash {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Hash(u.arbitrary()?))
+    }
+}
