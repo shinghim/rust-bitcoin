@@ -1805,7 +1805,9 @@ mod tests {
             assert_eq!(*is_segwit, tx.uses_segwit_serialization());
 
             let mut calculated_weight = empty_transaction_weight
-                + tx.inputs.iter().fold(Weight::ZERO, |sum, i| sum + txin_weight(i).expect("valid weight"))
+                + tx.inputs
+                    .iter()
+                    .fold(Weight::ZERO, |sum, i| sum + txin_weight(i).expect("valid weight"))
                 + tx.outputs.iter().fold(Weight::ZERO, |sum, o| sum + o.weight());
 
             // The empty tx uses SegWit serialization but a legacy tx does not.
