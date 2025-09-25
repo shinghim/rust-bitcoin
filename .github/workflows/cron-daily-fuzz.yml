@@ -42,6 +42,7 @@ jobs:
           p2p_deserialize_raw_net_msg,
           units_arbitrary_weight,
           units_parse_amount,
+          units_parse_int,
         ]
     steps:
       - name: Install test dependencies
