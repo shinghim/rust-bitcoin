@@ -1,4 +1,6 @@
-use honggfuzz::fuzz;
+#![no_main]
+
+use libfuzzer_sys::fuzz_target;
 
 fn do_test(data: &[u8]) {
     let block_result: Result<bitcoin::Block, _> =
@@ -13,13 +15,9 @@ fn do_test(data: &[u8]) {
     }
 }
 
-fn main() {
-    loop {
-        fuzz!(|data| {
-            do_test(data);
-        });
-    }
-}
+fuzz_target!(|data| {
+    do_test(data);
+});
 
 #[cfg(all(test, fuzzing))]
 mod tests {
