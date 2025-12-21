@@ -1,25 +1,11 @@
 #![no_main]
 
+use bitcoin::absolute::{Height, MedianTimePast};
+use bitcoin::relative::{NumberOf512Seconds, NumberOfBlocks};
 use libfuzzer_sys::fuzz_target;
 use bitcoin::{
-    Amount,
-    BlockHeight,
-    BlockHeightInterval,
-    BlockMtp,
-    BlockMtpInterval,
-    BlockTime,
-    FeeRate,
-    Sequence,
-    SignedAmount,
-    Weight,
-    absolute::{
-        Height,
-        MedianTimePast
-    },
-    relative::{
-        NumberOfBlocks,
-        NumberOf512Seconds
-    }
+    Amount, BlockHeight, BlockHeightInterval, BlockMtp, BlockMtpInterval, BlockTime, FeeRate,
+    Sequence, SignedAmount, Weight,
 };
 use standard_test::StandardChecks as _;
 
@@ -52,17 +38,16 @@ macro_rules! _impl_traits_on_wrapper {
 macro_rules! wrap_for_checks {
     ($ty:ident) => {
         #[derive(Default)]
-        pub(crate) struct $ty (super::$ty);
+        pub(crate) struct $ty(super::$ty);
 
         _impl_traits_on_wrapper!($ty);
     };
     ($ty:ident, $default:expr) => {
-        pub(crate) struct $ty (super::$ty);
+        pub(crate) struct $ty(super::$ty);
 
         _impl_traits_on_wrapper!($ty, $default);
     };
 }
-
 
 mod fuzz {
     use standard_test::standard_checks;
