@@ -1155,6 +1155,17 @@ impl<'a> Arbitrary<'a> for Xpub {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for Xpriv {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let network = match bool::arbitrary(u)? {
+            true => NetworkKind::Main,
+            false => NetworkKind::Test
+        };
+        Ok(Xpriv::new_master(network, u.arbitrary()?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;

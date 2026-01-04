@@ -201,7 +201,11 @@ impl Psbt {
                     fee_rate: FeeRate::MAX,
                     tx: self.internal_extract_tx(),
                 }),
-            _ => unreachable!(),
+            Err(other) => unreachable!(
+                "fee() returned unexpected error variant: {:?}. \
+                 Only MissingUtxo, NegativeFee, and FeeOverflow should be possible", 
+                other
+            )
         };
 
         // Note: Move prevents usage of &self from now on.
