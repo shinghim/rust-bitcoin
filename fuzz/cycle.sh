@@ -20,7 +20,7 @@ do
 
     # fuzz for one hour
     chrt -i 0 cargo +nightly fuzz run "$targetName" -- -max_total_time=3600
-    cargo +nightly fuzz cmin "$targetName" 
+    cargo +nightly fuzz cmin "$targetName"
   done
 done
 

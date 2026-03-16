@@ -16,6 +16,5 @@ hashes/target
 bitcoin/dep_test
 mutants.out*
 fuzz/coverage
-
 # Local tooling
 .maintainer-tools
