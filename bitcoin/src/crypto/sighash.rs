@@ -1534,6 +1534,16 @@ impl<'a> Arbitrary<'a> for TapSighashType {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, T> Arbitrary<'a> for SighashCache<T> 
+where
+    T: Borrow<Transaction> + Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self::new(u.arbitrary()?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;

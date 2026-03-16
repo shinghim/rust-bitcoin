@@ -40,6 +40,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "bitcoin_arbitrary_psbt"
+path = "fuzz_targets/bitcoin/arbitrary_psbt.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "bitcoin_arbitrary_script"
 path = "fuzz_targets/bitcoin/arbitrary_script.rs"
 test = false
