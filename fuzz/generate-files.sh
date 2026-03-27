@@ -38,6 +38,11 @@ unexpected_cfgs = { level = "deny", check-cfg = ['cfg(fuzzing)'] }
 [lints.clippy]
 redundant_clone = "warn"
 use_self = "warn"
+
+[package.metadata.rbmt.lint]
+allowed_duplicates = [
+    "hex-conservative",
+]
 EOF
 
 for targetFile in $(listTargetFiles); do
